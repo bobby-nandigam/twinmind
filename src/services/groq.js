@@ -45,6 +45,8 @@ export async function transcribeAudio(audioBlob, apiKey) {
 
 /**
  * Call Groq chat completions (non-streaming).
+ * In production, routes through /api/groq proxy.
+ * In development, calls Groq directly.
  * @param {object} opts
  * @param {string} opts.apiKey - Only used in development
  * @param {string} opts.model
@@ -66,15 +68,11 @@ export async function chatCompletion({ apiKey, model, systemPrompt, userMessage,
   };
 
   if (isProduction) {
-    // Use server proxy
-    const res = await fetch('/api/groq', {
+    // In production, use server proxy to hide API key
+    const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        endpoint: 'chat/completions',
-        method: 'POST',
-        body,
-      }),
+      body: JSON.stringify(body),
     });
 
     if (!res.ok) {
@@ -107,6 +105,8 @@ export async function chatCompletion({ apiKey, model, systemPrompt, userMessage,
 
 /**
  * Call Groq chat completions with streaming.
+ * In production, routes through /api/chat proxy.
+ * In development, calls Groq directly.
  * @param {object} opts
  * @param {string} opts.apiKey - Only used in development
  * @param {string} opts.model
@@ -127,14 +127,12 @@ export async function chatCompletionStream({ apiKey, model, systemPrompt, messag
 
   if (isProduction) {
     // Use server proxy with streaming
-    const res = await fetch('/api/groq', {
+    const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        endpoint: 'chat/completions',
-        method: 'POST',
-        body,
-        isStream: true,
+        ...body,
+        stream: true,
       }),
     });
 
