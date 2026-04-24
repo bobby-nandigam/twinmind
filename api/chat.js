@@ -3,13 +3,15 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    console.error('GROQ_API_KEY is not configured');
-    return res.status(500).json({ error: 'GROQ_API_KEY not configured on server' });
-  }
+  const { model, max_tokens, temperature, messages, stream, apiKey } = req.body;
 
-  const { model, max_tokens, temperature, messages, stream } = req.body;
+  // Use either env var (production) or passed apiKey (client-provided)
+  const key = process.env.GROQ_API_KEY || apiKey;
+
+  if (!key) {
+    console.error('[api/chat] No API key provided');
+    return res.status(401).json({ error: 'No API key provided' });
+  }
 
   if (!model || !messages) {
     return res.status(400).json({ error: 'Missing required fields: model, messages' });
@@ -21,7 +23,7 @@ export default async function handler(req, res) {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${key}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -70,4 +72,5 @@ export default async function handler(req, res) {
     res.status(500).json({ error: error.message });
   }
 }
+
 

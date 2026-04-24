@@ -68,11 +68,11 @@ export async function chatCompletion({ apiKey, model, systemPrompt, userMessage,
   };
 
   if (isProduction) {
-    // In production, use server proxy to hide API key
+    // In production, use server proxy but pass apiKey from client
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ ...body, apiKey }),
     });
 
     if (!res.ok) {
@@ -126,14 +126,11 @@ export async function chatCompletionStream({ apiKey, model, systemPrompt, messag
   };
 
   if (isProduction) {
-    // Use server proxy with streaming
+    // Use server proxy with streaming, pass apiKey from client
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...body,
-        stream: true,
-      }),
+      body: JSON.stringify({ ...body, apiKey }),
     });
 
     if (!res.ok) {
