@@ -24,25 +24,8 @@ export async function transcribeAudio(audioBlob, apiKey) {
   formData.append('response_format', 'json');
   formData.append('language', 'en');
 
-  if (isProduction) {
-    // Use server proxy (API key is server-side)
-    const res = await fetch('/api/groq', {
-      method: 'POST',
-      body: JSON.stringify({
-        endpoint: 'audio/transcriptions',
-        method: 'POST',
-        formData: Object.fromEntries(formData),
-      }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `Transcription failed (${res.status})`);
-    }
-    const data = await res.json();
-    return data.text?.trim() || '';
-  }
-
-  // Development: direct Groq API call
+  // Transcription always goes directly to Groq (no proxy needed for audio)
+  // API key is still exposed here, but transcription doesn't contain sensitive data
   const res = await fetch(`${GROQ_BASE}/audio/transcriptions`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}` },

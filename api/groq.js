@@ -4,7 +4,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { endpoint, method = 'POST', body, isStream } = req.body;
+  const { endpoint, method = 'POST', body, formData, isStream } = req.body;
 
   if (!endpoint) {
     return res.status(400).json({ error: 'Missing endpoint' });
@@ -15,14 +15,26 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch(`https://api.groq.com/openai/v1/${endpoint}`, {
+    const requestInit = {
       method,
       headers: {
         'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
-    });
+    };
+
+    // Handle form data (for transcription)
+    if (formData) {
+      const form = new FormData();
+      for (const [key, value] of Object.entries(formData)) {
+        form.append(key, value);
+      }
+      requestInit.body = form;
+    } else if (body) {
+      requestInit.headers['Content-Type'] = 'application/json';
+      requestInit.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(`https://api.groq.com/openai/v1/${endpoint}`, requestInit);
 
     if (!response.ok) {
       const error = await response.json();
